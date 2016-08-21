@@ -18,6 +18,7 @@ package com.github.dnvriend.query
 
 import akka.persistence.query.EventEnvelope
 import com.github.dnvriend.TestSpec
+import org.scalatest.Ignore
 
 class CurrentEventsByPersistenceIdTest extends TestSpec {
 

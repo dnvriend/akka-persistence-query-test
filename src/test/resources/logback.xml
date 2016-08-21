@@ -11,11 +11,9 @@
     </appender>
 
     <!--<logger name="org.github.dnvriend" level="debug"/>-->
-    <logger name="akka.actor" level="debug">
-        <appender-ref ref="console"/>
-    </logger>
+    <logger name="akka.actor" level="debug"/>
 
-    <root level="debug">
+    <root level="ERROR">
         <appender-ref ref="console"/>
     </root>
 

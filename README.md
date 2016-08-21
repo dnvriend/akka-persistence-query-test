@@ -38,6 +38,9 @@ from | to  | result
 0 | 3 | EventEnvelope(1, persistenceId, 1, event), EventEnvelope(2, persistenceId, 2, event), EventEnvelope(3, persistenceId, 3, event)
 1 | 3 | EventEnvelope(1, persistenceId, 1, event), EventEnvelope(2, persistenceId, 2, event), EventEnvelope(3, persistenceId, 3, event)
 
+EventsByPersistenceId should terminate when the toSequenceNr has been reached.
+Also, but not implemented by the levelDb journal, it should also terminate when the toSeqnr is equal to zero (0)
+
 ## EventsByTag API
 - The emitted element is [akka.persistence.query.EventEnvelope][eventenvelope],
 - The field `offset` is a generated number that is added to the event stream that tags that emitted event with a
