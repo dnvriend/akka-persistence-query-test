@@ -22,6 +22,9 @@ libraryDependencies += "com.typesafe.akka" %% "akka-persistence" % akkaVersion
 libraryDependencies += "org.iq80.leveldb" % "leveldb" % "0.9"
 libraryDependencies += "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8"
 
+// cassandra
+libraryDependencies += "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.22"
+
 libraryDependencies += "com.typesafe.akka" %% "akka-actor" % akkaVersion
 libraryDependencies += "com.typesafe.akka" %% "akka-slf4j" % akkaVersion
 libraryDependencies += "com.typesafe.akka" %% "akka-persistence-query-experimental" % akkaVersion
@@ -62,3 +65,4 @@ headers := Map(
 )
 
 enablePlugins(AutomateHeaderPlugin)
+enablePlugins(LagomScala)

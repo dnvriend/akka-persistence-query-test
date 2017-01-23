@@ -1,7 +1,7 @@
 # akka-persistence-query-test
 Study on the [akka-persistence-query][query] API. As there is no Technology Compatibility Kit (TCK) as of yet for [akka-persistence-query][query], I will be looking at the [leveldb][query-leveldb] implementation that comes out of the box with akka and assert the behavior so that I can replicate it in the [akka-persistence-inmemory][inmemory] and [akka-persistence-jdbc][jdbc] plugins. 
 
-# Conclusions
+## Conclusions
 The following are my findings.
 
 ## CurrentPersistenceIds API
@@ -45,7 +45,7 @@ Also, but not implemented by the levelDb journal, it should also terminate when 
 - The emitted element is [akka.persistence.query.EventEnvelope][eventenvelope],
 - The field `offset` is a generated number that is added to the event stream that tags that emitted event with a
 unique number for that query,
-- Using the offset field in the query, the following table applies when three events match the query:
+- Using the offset field in the query, the following table applies when three events match the query and is inclusive:
 
 offset | result 
 ------ | ------
@@ -55,7 +55,16 @@ offset | result
 3 | EventEnvelope(3, _, _, _)
 4 | No events are emitted
 
-# What's new?
+## Cassandra
+To test with cassandra, execute the following in sbt:
+
+- lagomCassandraStart
+- testOnly *CassandraEventsByTagTest2
+- lagomCassandraStop
+
+There is only one problem; Cassandra does not support the Sequence offset type.
+
+## What's new?
 
 ## 1.0.0 (2016-06-09)
   - Initial

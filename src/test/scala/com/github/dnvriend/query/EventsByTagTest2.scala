@@ -110,3 +110,5 @@ class LevelDbEventsByTagTest2 extends EventsByTagTest2("application.conf")
 class InMemoryEventsByTagTest2 extends EventsByTagTest2("inmemory.conf")
 
 class JdbcEventsByTagTest2 extends EventsByTagTest2("jdbc.conf")
+
+class CassandraEventsByTagTest2 extends EventsByTagTest2("cassandra.conf")

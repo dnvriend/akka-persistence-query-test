@@ -5,3 +5,6 @@ addSbtPlugin("org.scalariform" % "sbt-scalariform" % "1.6.0")
 // enable updating file headers eg. for copyright
 // https://github.com/sbt/sbt-header
 addSbtPlugin("de.heikoseeberger" % "sbt-header" % "1.5.1")
+
+// lagom
+addSbtPlugin("com.lightbend.lagom" % "lagom-sbt-plugin" % "1.3.0-M1")

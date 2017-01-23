@@ -20,6 +20,8 @@ import java.util.UUID
 
 import akka.actor.{ ActorRef, ActorSystem, PoisonPill, Props }
 import akka.event.{ Logging, LoggingAdapter }
+import akka.persistence.cassandra.query.scaladsl.CassandraReadJournal
+import akka.persistence.cassandra.session.scaladsl.CassandraSession
 import akka.persistence.inmemory.query.scaladsl.InMemoryReadJournal
 import akka.persistence.jdbc.config.JournalConfig
 import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
@@ -49,13 +51,14 @@ abstract class TestSpec(config: String = "application.conf") extends FlatSpec wi
   implicit val mat: Materializer = ActorMaterializer()
   implicit val ec: ExecutionContext = system.dispatcher
   val log: LoggingAdapter = Logging(system, this.getClass)
-  implicit val pc: PatienceConfig = PatienceConfig(timeout = 10.seconds)
+  implicit val pc: PatienceConfig = PatienceConfig(timeout = 2.seconds)
   implicit val timeout: Timeout = 30.seconds
 
   val identifier: String = config match {
-    case "inmemory.conf" => InMemoryReadJournal.Identifier
-    case "jdbc.conf"     => JdbcReadJournal.Identifier
-    case _               => LeveldbReadJournal.Identifier
+    case "cassandra.conf" => CassandraReadJournal.Identifier
+    case "inmemory.conf"  => InMemoryReadJournal.Identifier
+    case "jdbc.conf"      => JdbcReadJournal.Identifier
+    case _                => LeveldbReadJournal.Identifier
   }
 
   override def db: Option[JdbcBackend#DatabaseDef] = {
@@ -63,6 +66,12 @@ abstract class TestSpec(config: String = "application.conf") extends FlatSpec wi
       val cfg = system.settings.config.getConfig("jdbc-journal")
       val journalConfig = new JournalConfig(cfg)
       SlickDatabase.forConfig(cfg, journalConfig.slickConfiguration)
+    }
+  }
+
+  def session: Option[CassandraSession] = {
+    Option(config).filter(_ == "cassandra.conf").map { _ =>
+      readJournal.asInstanceOf[CassandraReadJournal].session
     }
   }
 
@@ -149,12 +158,24 @@ abstract class TestSpec(config: String = "application.conf") extends FlatSpec wi
 
   override protected def afterAll(): Unit = {
     config match {
+      case "cassandra.conf" =>
+        println("Cleaning Cassandra Journal")
+        session.foreach { s =>
+          Future.sequence(List(
+            s.executeWrite("TRUNCATE akka.messages")
+          //            s.executeWrite("TRUNCATE akka.metadata"),
+          //            s.executeWrite("TRUNCATE akka.config"),
+          //            s.executeWrite("TRUNCATE akka.snapshots")
+          )).futureValue
+        }
       case "jdbc.conf" =>
+        println("Closing database connections")
         db.foreach(_.close())
       case "inmemory.conf" =>
         println("No cleanup for inmemory store")
+      case "application.conf" =>
+        println("Deleting LevelDb dirs: " + deleteDirs)
       case _ =>
-        println("===> " + deleteDirs)
     }
     system.terminate().toTry should be a 'success
   }
