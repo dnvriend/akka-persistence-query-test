@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Dennis Vriend
+ * Copyright 2017 Dennis Vriend
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,9 @@
 
 package com.github.dnvriend.query
 
-import akka.persistence.query.EventEnvelope
+import akka.persistence.query.{ EventEnvelope, Sequence }
 import com.github.dnvriend.TestSpec
+
 import scala.concurrent.duration._
 
 class EventsByTagTest extends TestSpec {
