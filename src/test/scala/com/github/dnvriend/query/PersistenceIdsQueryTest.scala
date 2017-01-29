@@ -19,9 +19,9 @@ package com.github.dnvriend.query
 import com.github.dnvriend.TestSpec
 import scala.concurrent.duration._
 
-class AllPersistenceIdsTest extends TestSpec {
+class PersistenceIdsQueryTest extends TestSpec {
   it should "not terminate the stream when there are not pids" in
-    withAllPersistenceIds() { tp ⇒
+    withPersistenceIds() { tp =>
       tp.request(Long.MaxValue)
       tp.expectNoMsg(100.millis)
       tp.cancel()
@@ -29,8 +29,8 @@ class AllPersistenceIdsTest extends TestSpec {
     }
 
   it should "find persistenceIds for actors" in
-    withTestActors() { (actor1, actor2, actor3) ⇒
-      withAllPersistenceIds() { tp ⇒
+    withTestActors() { (actor1, actor2, actor3) =>
+      withPersistenceIds() { tp =>
         tp.request(Int.MaxValue)
 
         countJournal shouldBe 0 // note, there are *no* events
@@ -38,19 +38,19 @@ class AllPersistenceIdsTest extends TestSpec {
         // curious, empty event store but the
         // read-journal knows about the persistent actors
         tp.expectNextPF {
-          case "my-1" ⇒
-          case "my-2" ⇒
-          case "my-3" ⇒
+          case "my-1" =>
+          case "my-2" =>
+          case "my-3" =>
         }
         tp.expectNextPF {
-          case "my-1" ⇒
-          case "my-2" ⇒
-          case "my-3" ⇒
+          case "my-1" =>
+          case "my-2" =>
+          case "my-3" =>
         }
         tp.expectNextPF {
-          case "my-1" ⇒
-          case "my-2" ⇒
-          case "my-3" ⇒
+          case "my-1" =>
+          case "my-2" =>
+          case "my-3" =>
         }
         tp.expectNoMsg(100.millis)
 

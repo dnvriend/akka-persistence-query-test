@@ -64,6 +64,54 @@ To test with cassandra, execute the following in sbt:
 
 There is only one problem; Cassandra does not support the Sequence offset type.
 
+
+## Akka Persistence 2.4 -> 2.5 Migration Guide
+### Removal of PersistentView
+After being deprecated for a long time, and replaced by Persistence Query, `PersistentView` has now been removed.
+
+The consuming actor may be a plain Actor or an PersistentActor if it needs to store its own state (e.g. fromSequenceNr offset).
+
+Please note that Persistence Query is __not__ experimental anymore in Akka 2.5.0, so you can safely upgrade to it
+(albeit there is no TCK so no way to uniformly test the implementations).
+
+### Persistence Plugin Proxy
+A new persistence plugin proxy was added, that allows sharing of an otherwise non-sharable journal or snapshot store. 
+The proxy is available by setting `akka.persistence.journal.plugin` or `akka.persistence.snapshot-store.plugin` to 
+`akka.persistence.journal.proxy` or `akka.persistence.snapshot-store.proxy`, respectively. 
+The proxy supplants the Shared LevelDB journal.
+
+### Persistence Query
+Persistence Query has been promoted to a stable module. Only slight API changes were made since the module was introduced:
+
+### Query naming consistency improved
+Queries always fall into one of the two categories: infinite or finite ("current"). The naming convention for these 
+categories of queries was solidified and is now as follows:
+
+- __"infinite"__ - e.g. eventsByTag, persistenceIds - which will keep emitting events as they are persisted and match the query.
+- __"finite"__, also known as "current" - e.g. currentEventsByTag, currentPersistenceIds - which will complete the stream once the query completed, for the journal's definition of "current". For example in an SQL store it would mean it only queries the database once.
+
+### AllPersistenceIdsQuery Change 
+Only the `AllPersistenceIdsQuery` class and method name changed due to this. The class is now called `PersistenceIdsQuery`, 
+and the method which used to be allPersistenceIds is now `persistenceIds`.
+
+### Queries now use Offset instead of Long for offsets
+This change was made to better accomodate the various types of Journals and their understanding what an offset is. 
+For example, in some journals an offset is always a time, while in others it is a numeric offset (like a sequence id).
+
+Instead of the previous Long offset you can now use the provided Offset factories (and types):
+
+- akka.persistence.query.Offset.sequence(value: Long),
+- akka.persistence.query.Offset.timeBasedUUID(value: UUID)
+- and finally NoOffset if not offset should be used.
+
+Journals are also free to provide their own specific Offset types. Consult your journal plugin's documentation for details.
+
+
+
+## Resources
+- [Akka 2.5-M1](http://akka.io/news/2017/01/26/akka-2.5-M1-released.html)
+- [Akka 2.4 -> 2.5 Migration Guide](http://doc.akka.io/docs/akka/2.5-M1/project/migration-guide-2.4.x-2.5.x.html?_ga=1.105859075.164285114.1438178939)
+
 ## What's new?
 
 ## 1.0.0 (2016-06-09)

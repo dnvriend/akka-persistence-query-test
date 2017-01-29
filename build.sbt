@@ -8,14 +8,14 @@ scalaVersion := "2.11.8"
 
 resolvers += Resolver.jcenterRepo
 
-val akkaVersion = "2.4.16"
+val akkaVersion = "2.5-M1"
 
 // inmemory
-libraryDependencies += "com.github.dnvriend" %% "akka-persistence-inmemory" % "1.3.18"
+//libraryDependencies += "com.github.dnvriend" %% "akka-persistence-inmemory" % "1.3.18"
 
 // jdbc
-libraryDependencies += "com.github.dnvriend" %% "akka-persistence-jdbc" % "2.6.12"
-libraryDependencies += "com.h2database" % "h2" % "1.4.193"
+//libraryDependencies += "com.github.dnvriend" %% "akka-persistence-jdbc" % "2.6.12"
+//libraryDependencies += "com.h2database" % "h2" % "1.4.193"
 
 // leveldb
 libraryDependencies += "com.typesafe.akka" %% "akka-persistence" % akkaVersion
@@ -23,11 +23,11 @@ libraryDependencies += "org.iq80.leveldb" % "leveldb" % "0.9"
 libraryDependencies += "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8"
 
 // cassandra
-libraryDependencies += "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.22"
+//libraryDependencies += "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.22"
 
 libraryDependencies += "com.typesafe.akka" %% "akka-actor" % akkaVersion
 libraryDependencies += "com.typesafe.akka" %% "akka-slf4j" % akkaVersion
-libraryDependencies += "com.typesafe.akka" %% "akka-persistence-query-experimental" % akkaVersion
+libraryDependencies += "com.typesafe.akka" %% "akka-persistence-query" % akkaVersion
 libraryDependencies += "com.typesafe.akka" %% "akka-stream" % akkaVersion
 libraryDependencies += "com.typesafe.akka" %% "akka-slf4j" % akkaVersion
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.9"
@@ -65,4 +65,3 @@ headers := Map(
 )
 
 enablePlugins(AutomateHeaderPlugin)
-enablePlugins(LagomScala)

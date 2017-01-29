@@ -33,24 +33,24 @@ class TestActor(id: Int) extends PersistentActor {
   var state: Int = 0
 
   def deleteCmd(ref: ActorRef): Receive = {
-    case DeleteMessagesSuccess(toSequenceNr) ⇒
+    case DeleteMessagesSuccess(toSequenceNr) =>
       println(s"[$persistenceId]: Deleted: $toSequenceNr")
       ref ! Success(s"deleted-$toSequenceNr")
   }
 
   override def receiveCommand: Receive = LoggingReceive {
-    case DeleteCmd(toSequenceNr) ⇒
+    case DeleteCmd(toSequenceNr) =>
       deleteMessages(toSequenceNr)
       println(s"[$persistenceId]: Deleting: $toSequenceNr")
       context.become(deleteCmd(sender()))
 
-    case event: Int ⇒
-      persist(event) { (event: Int) ⇒
+    case event: Int =>
+      persist(event) { (event: Int) =>
         updateState(event)
       }
 
-    case event @ Tagged(payload: Int, tags) ⇒
-      persist(event) { (event: Tagged) ⇒
+    case event @ Tagged(payload: Int, tags) =>
+      persist(event) { (event: Tagged) =>
         updateState(payload)
       }
   }
@@ -60,6 +60,6 @@ class TestActor(id: Int) extends PersistentActor {
   }
 
   override def receiveRecover: Receive = LoggingReceive {
-    case event: Int ⇒ updateState(event)
+    case event: Int => updateState(event)
   }
 }
