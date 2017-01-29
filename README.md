@@ -42,17 +42,20 @@ EventsByPersistenceId should terminate when the toSequenceNr has been reached.
 Also, but not implemented by the levelDb journal, it should also terminate when the toSeqnr is equal to zero (0)
 
 ## EventsByTag API
+
 - The emitted element is [akka.persistence.query.EventEnvelope][eventenvelope],
 - The field `offset` is a generated number that is added to the event stream that tags that emitted event with a
 unique number for that query,
-- Using the offset field in the query, the following table applies when three events match the query and is inclusive:
+- Using the offset field in the query, the following table applies when three events match the query and is exclusive as of 2.5-M1,
+which IMHO makes no sense what so ever, the effect of being exclusive is never made explicit eg. in the offset type you could be
+saying Offset.exclusive(1) but they didn't..
 
 offset | result 
 ------ | ------
 0 | EventEnvelope(1, _, _, _), EventEnvelope(2, _, _, _), EventEnvelope(3, _, _, _)
-1 | EventEnvelope(1, _, _, _), EventEnvelope(2, _, _, _), EventEnvelope(3, _, _, _)
-2 | EventEnvelope(2, _, _, _), EventEnvelope(3, _, _, _)
-3 | EventEnvelope(3, _, _, _)
+1 | EventEnvelope(2, _, _, _), EventEnvelope(3, _, _, _)
+2 | EventEnvelope(3, _, _, _)
+3 | No events are emitted
 4 | No events are emitted
 
 ## Cassandra
