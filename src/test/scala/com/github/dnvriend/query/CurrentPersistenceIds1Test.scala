@@ -16,28 +16,30 @@
 
 package com.github.dnvriend.query
 
+import akka.persistence.query.{ EventEnvelope, Sequence }
 import com.github.dnvriend.TestSpec
+import akka.pattern.ask
 
-abstract class CurrentEventsByTagTest1(config: String) extends TestSpec(config) {
+import scala.concurrent.Future
 
-  it should "not find an event by tag for unknown tag" in {
+class CurrentPersistenceIds1Test extends TestSpec {
+
+  it should "not find any events for unknown pid" in
+    withCurrentEventsByPersistenceId()("unkown-pid", 0L, Long.MaxValue) { tp =>
+      tp.request(Int.MaxValue)
+      tp.expectComplete()
+    }
+
+  it should "find events from an offset" in {
     withTestActors() { (actor1, actor2, actor3) =>
-      actor1 ! withTags("a", "one")
-      actor2 ! withTags("a", "two")
-      actor3 ! withTags("a", "three")
+      Future.sequence(Range.inclusive(1, 4).map(_ => actor1 ? "a")).toTry should be a 'success
 
-      eventually {
-        countJournal shouldBe 3
-      }
-
-      withCurrentEventsByTag()("unknown", 0) { tp =>
+      withCurrentEventsByPersistenceId()("my-1", 2, 3) { tp =>
         tp.request(Int.MaxValue)
+        tp.expectNext(EventEnvelope(Sequence(2), "my-1", 2, "a-2"))
+        tp.expectNext(EventEnvelope(Sequence(3), "my-1", 3, "a-3"))
         tp.expectComplete()
       }
     }
   }
 }
-
-class LevelDbCurrentEventsByTagTest1 extends CurrentEventsByTagTest1("application.conf")
-
-class InMemoryCurrentEventsByTagTest1 extends CurrentEventsByTagTest1("inmemory.conf")

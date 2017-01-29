@@ -18,37 +18,36 @@ package com.github.dnvriend.query
 
 import akka.persistence.query.{ EventEnvelope, Sequence }
 import com.github.dnvriend.TestSpec
+import akka.pattern.ask
 
-class CurrentEventsByTagTest2 extends TestSpec {
+abstract class CurrentEventsByTagTest2(config: String) extends TestSpec(config) {
 
   it should "find all events by tag" in {
     withTestActors() { (actor1, actor2, actor3) =>
-      actor1 ! withTags(1, "number")
-      actor2 ! withTags(2, "number")
-      actor3 ! withTags(3, "number")
-
-      eventually {
-        countJournal shouldBe 3
-      }
+      (for {
+        _ <- actor1 ? withTags("a", "number")
+        _ <- actor2 ? withTags("b", "number")
+        _ <- actor3 ? withTags("c", "number")
+      } yield ()).toTry should be a 'success
 
       withCurrentEventsByTag()("number", 0) { tp =>
         tp.request(Int.MaxValue)
-        tp.expectNextPF { case EventEnvelope(Sequence(1), _, _, _) => }
-        tp.expectNextPF { case EventEnvelope(Sequence(2), _, _, _) => }
-        tp.expectNextPF { case EventEnvelope(Sequence(3), _, _, _) => }
+        tp.expectNextPF { case EventEnvelope(Sequence(1), "my-1", 1, "a-1") => }
+        tp.expectNextPF { case EventEnvelope(Sequence(2), "my-2", 1, "b-1") => }
+        tp.expectNextPF { case EventEnvelope(Sequence(3), "my-3", 1, "c-1") => }
         tp.expectComplete()
       }
 
       withCurrentEventsByTag()("number", 1) { tp =>
         tp.request(Int.MaxValue)
-        tp.expectNextPF { case EventEnvelope(Sequence(2), _, _, _) => }
-        tp.expectNextPF { case EventEnvelope(Sequence(3), _, _, _) => }
+        tp.expectNextPF { case EventEnvelope(Sequence(2), "my-2", 1, "b-1") => }
+        tp.expectNextPF { case EventEnvelope(Sequence(3), "my-3", 1, "c-1") => }
         tp.expectComplete()
       }
 
       withCurrentEventsByTag()("number", 2) { tp =>
         tp.request(Int.MaxValue)
-        tp.expectNextPF { case EventEnvelope(Sequence(3), _, _, _) => }
+        tp.expectNextPF { case EventEnvelope(Sequence(3), "my-3", 1, "c-1") => }
         tp.expectComplete()
       }
 
@@ -64,3 +63,7 @@ class CurrentEventsByTagTest2 extends TestSpec {
     }
   }
 }
+
+class LevelDbCurrentEventsByTagTest2 extends CurrentEventsByTagTest2("application.conf")
+
+class InMemoryCurrentEventsByTagTest2 extends CurrentEventsByTagTest2("inmemory.conf")

@@ -18,14 +18,17 @@ package com.github.dnvriend.query
 
 import akka.persistence.query.{ EventEnvelope, Sequence }
 import com.github.dnvriend.TestSpec
+import akka.pattern.ask
 
-class CurrentEventsByTagTest3 extends TestSpec {
+abstract class CurrentEventsByTagTest3(config: String) extends TestSpec(config) {
 
   it should "find events from an offset" in {
     withTestActors() { (actor1, actor2, actor3) =>
-      actor1 ! withTags(1, "number2")
-      actor2 ! withTags(2, "number2")
-      actor3 ! withTags(3, "number2")
+      (for {
+        _ <- actor1 ? withTags("a", "number2")
+        _ <- actor2 ? withTags("b", "number2")
+        _ <- actor3 ? withTags("c", "number2")
+      } yield ()).toTry should be a 'success
 
       eventually {
         countJournal shouldBe 3
@@ -33,22 +36,22 @@ class CurrentEventsByTagTest3 extends TestSpec {
 
       withCurrentEventsByTag()("number2", 0) { tp =>
         tp.request(Int.MaxValue)
-        tp.expectNextPF { case EventEnvelope(Sequence(1), _, _, _) => }
-        tp.expectNextPF { case EventEnvelope(Sequence(2), _, _, _) => }
-        tp.expectNextPF { case EventEnvelope(Sequence(3), _, _, _) => }
+        tp.expectNextPF { case EventEnvelope(Sequence(1), "my-1", 1, "a-1") => }
+        tp.expectNextPF { case EventEnvelope(Sequence(2), "my-2", 1, "b-1") => }
+        tp.expectNextPF { case EventEnvelope(Sequence(3), "my-3", 1, "c-1") => }
         tp.expectComplete()
       }
 
       withCurrentEventsByTag()("number2", 1) { tp =>
         tp.request(Int.MaxValue)
-        tp.expectNextPF { case EventEnvelope(Sequence(2), _, _, _) => }
-        tp.expectNextPF { case EventEnvelope(Sequence(3), _, _, _) => }
+        tp.expectNextPF { case EventEnvelope(Sequence(2), "my-2", 1, "b-1") => }
+        tp.expectNextPF { case EventEnvelope(Sequence(3), "my-3", 1, "c-1") => }
         tp.expectComplete()
       }
 
       withCurrentEventsByTag()("number2", 2) { tp =>
         tp.request(Int.MaxValue)
-        tp.expectNextPF { case EventEnvelope(Sequence(3), _, _, _) => }
+        tp.expectNextPF { case EventEnvelope(Sequence(3), "my-3", 1, "c-1") => }
         tp.expectComplete()
       }
 
@@ -59,3 +62,7 @@ class CurrentEventsByTagTest3 extends TestSpec {
     }
   }
 }
+
+class LevelDbCurrentEventsByTagTest3 extends CurrentEventsByTagTest3("application.conf")
+
+class InMemoryCurrentEventsByTagTest3 extends CurrentEventsByTagTest3("inmemory.conf")

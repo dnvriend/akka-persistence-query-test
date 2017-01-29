@@ -16,10 +16,14 @@
 
 package com.github.dnvriend.query
 
+import akka.persistence.inmemory.query.scaladsl.InMemoryReadJournal
+import akka.persistence.query.journal.leveldb.scaladsl.LeveldbReadJournal
 import com.github.dnvriend.TestSpec
+
 import scala.concurrent.duration._
 
-class PersistenceIdsQueryTest extends TestSpec {
+abstract class PersistenceIdsQueryTest(config: String) extends TestSpec(config) {
+
   it should "not terminate the stream when there are not pids" in
     withPersistenceIds() { tp =>
       tp.request(Long.MaxValue)
@@ -35,41 +39,55 @@ class PersistenceIdsQueryTest extends TestSpec {
 
         countJournal shouldBe 0 // note, there are *no* events
 
-        // curious, empty event store but the
-        // read-journal knows about the persistent actors
-        tp.expectNextPF {
-          case "my-1" =>
-          case "my-2" =>
-          case "my-3" =>
+        if (readJournal.isInstanceOf[LeveldbReadJournal]) {
+          // curious, empty event store but the
+          // read-journal knows about the persistent actors
+          tp.expectNextPF {
+            case "my-1" =>
+            case "my-2" =>
+            case "my-3" =>
+          }
+          tp.expectNextPF {
+            case "my-1" =>
+            case "my-2" =>
+            case "my-3" =>
+          }
+          tp.expectNextPF {
+            case "my-1" =>
+            case "my-2" =>
+            case "my-3" =>
+          }
         }
-        tp.expectNextPF {
-          case "my-1" =>
-          case "my-2" =>
-          case "my-3" =>
-        }
-        tp.expectNextPF {
-          case "my-1" =>
-          case "my-2" =>
-          case "my-3" =>
-        }
+
         tp.expectNoMsg(100.millis)
+        countJournal shouldBe 0 // note, there are *no* events
 
         actor1 ! 1
         eventually {
           countJournal shouldBe 1
         }
 
+        if (readJournal.isInstanceOf[InMemoryReadJournal]) {
+          tp.expectNext("my-1")
+        }
         tp.expectNoMsg(100.millis)
 
         actor2 ! 1
         eventually {
           countJournal shouldBe 2
         }
+
+        if (readJournal.isInstanceOf[InMemoryReadJournal]) {
+          tp.expectNext("my-2")
+        }
         tp.expectNoMsg(100.millis)
 
         actor3 ! 1
         eventually {
           countJournal shouldBe 3
+        }
+        if (readJournal.isInstanceOf[InMemoryReadJournal]) {
+          tp.expectNext("my-3")
         }
         tp.expectNoMsg(100.millis)
 
@@ -99,3 +117,7 @@ class PersistenceIdsQueryTest extends TestSpec {
       }
     }
 }
+
+class LevelDbPersistenceIdsQueryTest extends PersistenceIdsQueryTest("application.conf")
+
+class InMemoryPersistenceIdsQueryTest extends PersistenceIdsQueryTest("inmemory.conf")

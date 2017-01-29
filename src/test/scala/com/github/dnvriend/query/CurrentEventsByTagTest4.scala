@@ -18,12 +18,13 @@ package com.github.dnvriend.query
 
 import akka.persistence.query.{ EventEnvelope, Sequence }
 import com.github.dnvriend.TestSpec
+import akka.pattern.ask
 
-class CurrentEventsByTagTest4 extends TestSpec {
+abstract class CurrentEventsByTagTest4(config: String) extends TestSpec(config) {
 
   it should "persist and find a tagged event with one tag" in
     withTestActors() { (actor1, actor2, actor3) =>
-      actor1 ! withTags(1, "one2")
+      (actor1 ? withTags(1, "one2")).toTry should be a 'success
 
       withClue("query should find the event by tag") {
         withCurrentEventsByTag()("one2", 0) { tp =>
@@ -42,3 +43,7 @@ class CurrentEventsByTagTest4 extends TestSpec {
       }
     }
 }
+
+class LevelDbCurrentEventsByTagTest4 extends CurrentEventsByTagTest4("application.conf")
+
+class InMemoryCurrentEventsByTagTest4 extends CurrentEventsByTagTest4("inmemory.conf")

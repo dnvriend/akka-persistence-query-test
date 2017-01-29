@@ -16,107 +16,146 @@
 
 package com.github.dnvriend.query
 
-import akka.persistence.query.{ EventEnvelope, Sequence }
+import akka.persistence.query.{ EventEnvelope, NoOffset, Sequence }
 import com.github.dnvriend.TestSpec
+import akka.pattern.ask
 
-class CurrentEventsByTagTest5 extends TestSpec {
+abstract class CurrentEventsByTagTest5(config: String) extends TestSpec(config) {
 
   it should "persist and find a tagged event with multiple tags" in
     withTestActors() { (actor1, actor2, actor3) =>
       withClue("Persisting multiple tagged events") {
-        actor1 ! withTags(1, "one", "1", "prime")
-        actor1 ! withTags(2, "two", "2", "prime")
-        actor1 ! withTags(3, "three", "3", "prime")
-        actor1 ! withTags(4, "four", "4")
-        actor1 ! withTags(5, "five", "5", "prime")
+        (for {
+          _ <- actor1 ? withTags("a", "one", "1", "prime")
+          _ <- actor1 ? withTags("a", "two", "2", "prime")
+          _ <- actor1 ? withTags("a", "three", "3", "prime")
+          _ <- actor1 ? withTags("a", "four", "4")
+          _ <- actor1 ? withTags("a", "five", "5", "prime")
 
-        actor2 ! withTags(3, "three", "3", "prime")
-        actor3 ! withTags(3, "three", "3", "prime")
+          _ <- actor2 ? withTags("a", "three", "3", "prime")
+          _ <- actor3 ? withTags("a", "three", "3", "prime")
 
-        actor1 ! 1
-        actor1 ! 1
-
-        eventually {
-          countJournal shouldBe 9
-        }
+          _ <- actor1 ? "a"
+          _ <- actor1 ? "a"
+        } yield ()).toTry should be a 'success
       }
 
-      withClue("query should find events for tag 'one'") {
-        withCurrentEventsByTag()("one", 0) { tp =>
-          tp.request(Int.MaxValue)
-          tp.expectNextPF { case EventEnvelope(Sequence(1), _, _, _) => }
-          tp.expectComplete()
-        }
+      withCurrentEventsByTag()("one", NoOffset) { tp =>
+        tp.request(Int.MaxValue)
+        tp.expectNext(EventEnvelope(Sequence(1), "my-1", 1, "a-1"))
+        tp.expectComplete()
+      }
+      withCurrentEventsByTag()("one", Sequence(1)) { tp =>
+        tp.request(Int.MaxValue)
+        tp.expectComplete()
       }
 
-      withClue("query should find events for tag 'prime'") {
-        withCurrentEventsByTag()("prime", 0) { tp =>
-          tp.request(Int.MaxValue)
-          tp.expectNextPF { case EventEnvelope(Sequence(1), _, _, _) => }
-          tp.expectNextPF { case EventEnvelope(Sequence(2), _, _, _) => }
-          tp.expectNextPF { case EventEnvelope(Sequence(3), _, _, _) => }
-          tp.expectNextPF { case EventEnvelope(Sequence(4), _, _, _) => }
-          tp.expectNextPF { case EventEnvelope(Sequence(5), _, _, _) => }
-          tp.expectNextPF { case EventEnvelope(Sequence(6), _, _, _) => }
-          tp.expectComplete()
-        }
-        withCurrentEventsByTag()("prime", 1) { tp =>
-          tp.request(Int.MaxValue)
-          tp.expectNextPF { case EventEnvelope(Sequence(2), _, _, _) => }
-          tp.expectNextPF { case EventEnvelope(Sequence(3), _, _, _) => }
-          tp.expectNextPF { case EventEnvelope(Sequence(4), _, _, _) => }
-          tp.expectNextPF { case EventEnvelope(Sequence(5), _, _, _) => }
-          tp.expectNextPF { case EventEnvelope(Sequence(6), _, _, _) => }
-          tp.expectComplete()
-        }
-        withCurrentEventsByTag()("prime", 2) { tp =>
-          tp.request(Int.MaxValue)
-          tp.expectNextPF { case EventEnvelope(Sequence(3), _, _, _) => }
-          tp.expectNextPF { case EventEnvelope(Sequence(4), _, _, _) => }
-          tp.expectNextPF { case EventEnvelope(Sequence(5), _, _, _) => }
-          tp.expectNextPF { case EventEnvelope(Sequence(6), _, _, _) => }
-          tp.expectComplete()
-        }
-        withCurrentEventsByTag()("prime", 3) { tp =>
-          tp.request(Int.MaxValue)
-          tp.expectNextPF { case EventEnvelope(Sequence(4), _, _, _) => }
-          tp.expectNextPF { case EventEnvelope(Sequence(5), _, _, _) => }
-          tp.expectNextPF { case EventEnvelope(Sequence(6), _, _, _) => }
-          tp.expectComplete()
-        }
-        withCurrentEventsByTag()("prime", 4) { tp =>
-          tp.request(Int.MaxValue)
-          tp.expectNextPF { case EventEnvelope(Sequence(5), _, _, _) => }
-          tp.expectNextPF { case EventEnvelope(Sequence(6), _, _, _) => }
-          tp.expectComplete()
-        }
-        withCurrentEventsByTag()("prime", 5) { tp =>
-          tp.request(Int.MaxValue)
-          tp.expectNextPF { case EventEnvelope(Sequence(6), _, _, _) => }
-          tp.expectComplete()
-        }
-        withCurrentEventsByTag()("prime", 6) { tp =>
-          tp.request(Int.MaxValue)
-          tp.expectComplete()
-        }
+      withCurrentEventsByTag()("prime", NoOffset) { tp =>
+        tp.request(Int.MaxValue)
+        tp.expectNext(EventEnvelope(Sequence(1), "my-1", 1, "a-1"))
+        tp.expectNext(EventEnvelope(Sequence(2), "my-1", 2, "a-2"))
+        tp.expectNext(EventEnvelope(Sequence(3), "my-1", 3, "a-3"))
+        tp.expectNext(EventEnvelope(Sequence(4), "my-1", 5, "a-5"))
+        tp.expectNext(EventEnvelope(Sequence(5), "my-2", 1, "a-1"))
+        tp.expectNext(EventEnvelope(Sequence(6), "my-3", 1, "a-1"))
+        tp.expectComplete()
       }
 
-      withClue("query should find events for tag '3'") {
-        withCurrentEventsByTag()("3", 0) { tp =>
-          tp.request(Int.MaxValue)
-          tp.expectNextPF { case EventEnvelope(Sequence(1), _, _, _) => }
-          tp.expectNextPF { case EventEnvelope(Sequence(2), _, _, _) => }
-          tp.expectNextPF { case EventEnvelope(Sequence(3), _, _, _) => }
-          tp.expectComplete()
-        }
+      withCurrentEventsByTag()("prime", Sequence(0)) { tp =>
+        tp.request(Int.MaxValue)
+        tp.expectNext(EventEnvelope(Sequence(1), "my-1", 1, "a-1"))
+        tp.expectNext(EventEnvelope(Sequence(2), "my-1", 2, "a-2"))
+        tp.expectNext(EventEnvelope(Sequence(3), "my-1", 3, "a-3"))
+        tp.expectNext(EventEnvelope(Sequence(4), "my-1", 5, "a-5"))
+        tp.expectNext(EventEnvelope(Sequence(5), "my-2", 1, "a-1"))
+        tp.expectNext(EventEnvelope(Sequence(6), "my-3", 1, "a-1"))
+        tp.expectComplete()
       }
 
-      withClue("query should find events for tag '3'") {
-        withCurrentEventsByTag()("4", 0) { tp =>
-          tp.request(Int.MaxValue)
-          tp.expectNextPF { case EventEnvelope(Sequence(1), _, _, _) => }
-          tp.expectComplete()
-        }
+      withCurrentEventsByTag()("prime", Sequence(1)) { tp =>
+        tp.request(Int.MaxValue)
+        tp.expectNext(EventEnvelope(Sequence(2), "my-1", 2, "a-2"))
+        tp.expectNext(EventEnvelope(Sequence(3), "my-1", 3, "a-3"))
+        tp.expectNext(EventEnvelope(Sequence(4), "my-1", 5, "a-5"))
+        tp.expectNext(EventEnvelope(Sequence(5), "my-2", 1, "a-1"))
+        tp.expectNext(EventEnvelope(Sequence(6), "my-3", 1, "a-1"))
+        tp.expectComplete()
+      }
+
+      withCurrentEventsByTag()("prime", Sequence(2)) { tp =>
+        tp.request(Int.MaxValue)
+        tp.expectNext(EventEnvelope(Sequence(3), "my-1", 3, "a-3"))
+        tp.expectNext(EventEnvelope(Sequence(4), "my-1", 5, "a-5"))
+        tp.expectNext(EventEnvelope(Sequence(5), "my-2", 1, "a-1"))
+        tp.expectNext(EventEnvelope(Sequence(6), "my-3", 1, "a-1"))
+        tp.expectComplete()
+      }
+
+      withCurrentEventsByTag()("prime", Sequence(3)) { tp =>
+        tp.request(Int.MaxValue)
+        tp.expectNext(EventEnvelope(Sequence(4), "my-1", 5, "a-5"))
+        tp.expectNext(EventEnvelope(Sequence(5), "my-2", 1, "a-1"))
+        tp.expectNext(EventEnvelope(Sequence(6), "my-3", 1, "a-1"))
+        tp.expectComplete()
+      }
+
+      withCurrentEventsByTag()("prime", Sequence(4)) { tp =>
+        tp.request(Int.MaxValue)
+        tp.expectNext(EventEnvelope(Sequence(5), "my-2", 1, "a-1"))
+        tp.expectNext(EventEnvelope(Sequence(6), "my-3", 1, "a-1"))
+        tp.expectComplete()
+      }
+
+      withCurrentEventsByTag()("prime", Sequence(5)) { tp =>
+        tp.request(Int.MaxValue)
+        tp.expectNext(EventEnvelope(Sequence(6), "my-3", 1, "a-1"))
+        tp.expectComplete()
+      }
+
+      withCurrentEventsByTag()("prime", Sequence(6)) { tp =>
+        tp.request(Int.MaxValue)
+        tp.expectComplete()
+      }
+
+      withCurrentEventsByTag()("prime", Sequence(7)) { tp =>
+        tp.request(Int.MaxValue)
+        tp.expectComplete()
+      }
+
+      withCurrentEventsByTag()("3", NoOffset) { tp =>
+        tp.request(Int.MaxValue)
+        tp.expectNext(EventEnvelope(Sequence(1), "my-1", 3, "a-3"))
+        tp.expectNext(EventEnvelope(Sequence(2), "my-2", 1, "a-1"))
+        tp.expectNext(EventEnvelope(Sequence(3), "my-3", 1, "a-1"))
+        tp.expectComplete()
+      }
+
+      withCurrentEventsByTag()("4", NoOffset) { tp =>
+        tp.request(Int.MaxValue)
+        tp.expectNext(EventEnvelope(Sequence(1), "my-1", 4, "a-4"))
+        tp.expectComplete()
+      }
+
+      withCurrentEventsByTag()("four", NoOffset) { tp =>
+        tp.request(Int.MaxValue)
+        tp.expectNext(EventEnvelope(Sequence(1), "my-1", 4, "a-4"))
+        tp.expectComplete()
+      }
+
+      withCurrentEventsByTag()("5", NoOffset) { tp =>
+        tp.request(Int.MaxValue)
+        tp.expectNext(EventEnvelope(Sequence(1), "my-1", 5, "a-5"))
+        tp.expectComplete()
+      }
+
+      withCurrentEventsByTag()("five", NoOffset) { tp =>
+        tp.request(Int.MaxValue)
+        tp.expectNext(EventEnvelope(Sequence(1), "my-1", 5, "a-5"))
+        tp.expectComplete()
       }
     }
 }
+
+class LevelDbCurrentEventsByTagTest5 extends CurrentEventsByTagTest5("application.conf")
+
+class InMemoryCurrentEventsByTagTest5 extends CurrentEventsByTagTest5("inmemory.conf")

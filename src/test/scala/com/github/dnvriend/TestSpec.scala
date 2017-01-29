@@ -24,7 +24,7 @@ import akka.event.{ Logging, LoggingAdapter }
 import scala.language.implicitConversions
 //import akka.persistence.cassandra.query.scaladsl.CassandraReadJournal
 //import akka.persistence.cassandra.session.scaladsl.CassandraSession
-//import akka.persistence.inmemory.query.scaladsl.InMemoryReadJournal
+import akka.persistence.inmemory.query.scaladsl.InMemoryReadJournal
 //import akka.persistence.jdbc.config.JournalConfig
 //import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
 //import akka.persistence.jdbc.util.SlickDatabase
@@ -58,9 +58,9 @@ abstract class TestSpec(config: String = "application.conf") extends FlatSpec wi
 
   val identifier: String = config match {
     //    case "cassandra.conf" => CassandraReadJournal.Identifier
-    //    case "inmemory.conf"  => InMemoryReadJournal.Identifier
+    case "inmemory.conf" => InMemoryReadJournal.Identifier
     //    case "jdbc.conf"      => JdbcReadJournal.Identifier
-    case _ => LeveldbReadJournal.Identifier
+    case _               => LeveldbReadJournal.Identifier
   }
 
   //  override def db: Option[JdbcBackend#DatabaseDef] = {
@@ -153,27 +153,26 @@ abstract class TestSpec(config: String = "application.conf") extends FlatSpec wi
     readJournal.currentEventsByTag(tag, offset).runWith(Sink.seq).futureValue.toList
 
   override protected def afterAll(): Unit = {
-    //    config match {
-    //      case "cassandra.conf" =>
-    //        println("Cleaning Cassandra Journal")
-    //        session.foreach { s =>
-    //          Future.sequence(List(
-    //            s.executeWrite("TRUNCATE akka.messages")
-    //                      s.executeWrite("TRUNCATE akka.metadata"),
-    //                      s.executeWrite("TRUNCATE akka.config"),
-    //                      s.executeWrite("TRUNCATE akka.snapshots")
-    //          )).futureValue
-    //        }
-    //      case "jdbc.conf" =>
-    //        println("Closing database connections")
-    //        db.foreach(_.close())
-    //      case "inmemory.conf" =>
-    //        println("No cleanup for inmemory store")
-    //      case "application.conf" =>
-    //        println("Deleting LevelDb dirs: " + deleteDirs)
-    //      case _ =>
-    //    }
-    println("Deleting LevelDb dirs: " + deleteDirs)
+    config match {
+      //      case "cassandra.conf" =>
+      //        println("Cleaning Cassandra Journal")
+      //        session.foreach { s =>
+      //          Future.sequence(List(
+      //            s.executeWrite("TRUNCATE akka.messages")
+      //                      s.executeWrite("TRUNCATE akka.metadata"),
+      //                      s.executeWrite("TRUNCATE akka.config"),
+      //                      s.executeWrite("TRUNCATE akka.snapshots")
+      //          )).futureValue
+      //        }
+      //      case "jdbc.conf" =>
+      //        println("Closing database connections")
+      //        db.foreach(_.close())
+      case "inmemory.conf" =>
+        println("No cleanup for inmemory store")
+      case "application.conf" =>
+        println("Deleting LevelDb dirs: " + deleteDirs)
+      case _ =>
+    }
     system.terminate().toTry should be a 'success
   }
 

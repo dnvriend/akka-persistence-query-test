@@ -11,7 +11,7 @@ resolvers += Resolver.jcenterRepo
 val akkaVersion = "2.5-M1"
 
 // inmemory
-//libraryDependencies += "com.github.dnvriend" %% "akka-persistence-inmemory" % "1.3.18"
+libraryDependencies += "com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.0.0-M1-SNAPSHOT"
 
 // jdbc
 //libraryDependencies += "com.github.dnvriend" %% "akka-persistence-jdbc" % "2.6.12"

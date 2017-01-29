@@ -30,7 +30,7 @@ class TestActor(id: Int) extends PersistentActor {
   import TestActor._
   override val persistenceId: String = "my-" + id
   println("==> Created test actor: " + persistenceId)
-  var state: Int = 0
+  var state: Int = 1
 
   def deleteCmd(ref: ActorRef): Receive = {
     case DeleteMessagesSuccess(toSequenceNr) =>
@@ -44,22 +44,23 @@ class TestActor(id: Int) extends PersistentActor {
       println(s"[$persistenceId]: Deleting: $toSequenceNr")
       context.become(deleteCmd(sender()))
 
-    case event: Int =>
-      persist(event) { (event: Int) =>
-        updateState(event)
+    case event @ Tagged(payload: Any, tags) =>
+      persist(event.copy(payload = s"$payload-$state")) { _ =>
+        increment()
+        sender() ! event
       }
 
-    case event @ Tagged(payload: Int, tags) =>
-      persist(event) { (event: Tagged) =>
-        updateState(payload)
+    case event =>
+      persist(s"$event-$state") { _ =>
+        increment()
+        sender() ! event
       }
+
   }
 
-  def updateState(event: Int): Unit = {
-    state = state + event
-  }
+  def increment(): Unit = state += 1
 
   override def receiveRecover: Receive = LoggingReceive {
-    case event: Int => updateState(event)
+    case event: String => increment()
   }
 }

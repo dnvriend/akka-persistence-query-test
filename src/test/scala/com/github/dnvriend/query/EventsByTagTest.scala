@@ -103,7 +103,7 @@ abstract class EventsByTagTest(config: String) extends TestSpec(config) {
 
 class LevelDbEventsByTagTest extends EventsByTagTest("application.conf")
 
-//class InMemoryEventsByTagTest2 extends EventsByTagTest2("inmemory.conf")
+class InMemoryEventsByTagTest extends EventsByTagTest("inmemory.conf")
 //
 //class JdbcEventsByTagTest2 extends EventsByTagTest2("jdbc.conf")
 //
