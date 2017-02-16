@@ -102,9 +102,14 @@ abstract class TestSpec(config: String = "application.conf") extends FlatSpec wi
     system.actorOf(Props(new TestActor(persistenceId)))
   }
 
+  def deleteEvents(actor: ActorRef, toSequenceNr: Long): Future[Unit] = {
+    import akka.pattern.ask
+    actor.ask(TestActor.DeleteCmd(toSequenceNr)).map(_ => ())
+  }
+
   def clearEventStore(actors: ActorRef*): Future[Unit] = {
     import akka.pattern.ask
-    Future.sequence(actors.map(_ ? TestActor.DeleteCmd())).map(_ => ())
+    Future.sequence(actors.map(_.ask(TestActor.DeleteCmd()))).map(_ => ())
   }
 
   def withTestActors()(f: (ActorRef, ActorRef, ActorRef) => Unit): Unit = {
@@ -117,7 +122,17 @@ abstract class TestSpec(config: String = "application.conf") extends FlatSpec wi
     }
   }
 
-  def withTags(payload: Any, tags: String*) = Tagged(payload, Set(tags: _*))
+  def sendMessage(msg: Any, actors: ActorRef*): Future[Unit] = {
+    import akka.pattern.ask
+    Future.sequence(actors.map(_.ask(msg))).map(_ => ())
+  }
+
+  def withTags(msg: Any, tags: String*) = Tagged(msg, Set(tags: _*))
+
+  def sendMessage(tagged: Tagged, actors: ActorRef*): Future[Unit] = {
+    import akka.pattern.ask
+    Future.sequence(actors.map(_.ask(tagged))).map(_ => ())
+  }
 
   def withCurrentPersistenceIds(within: FiniteDuration = 1.second)(f: TestSubscriber.Probe[String] => Unit): Unit = {
     val tp = readJournal.currentPersistenceIds().filter(pid => (1 to 3).map(id => s"my-$id").contains(pid)).runWith(TestSink.probe[String])
@@ -129,6 +144,12 @@ abstract class TestSpec(config: String = "application.conf") extends FlatSpec wi
     tp.within(within)(f(tp))
   }
 
+  /**
+   * The returned event stream is ordered by sequence number,
+   * i.e. the same order as the PersistentActor persisted the events.
+   * The same prefix of stream elements (in same order) are returned for multiple
+   * executions of the query, except for when events have been deleted.
+   */
   def withCurrentEventsByPersistenceId(within: FiniteDuration = 1.second)(persistenceId: String, fromSequenceNr: Long = 0, toSequenceNr: Long = Long.MaxValue)(f: TestSubscriber.Probe[EventEnvelope] => Unit): Unit = {
     val tp = readJournal.currentEventsByPersistenceId(persistenceId, fromSequenceNr, toSequenceNr).runWith(TestSink.probe[EventEnvelope])
     tp.within(within)(f(tp))

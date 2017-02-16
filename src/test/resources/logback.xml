@@ -6,14 +6,14 @@
             <level>debug</level>
         </filter>
         <encoder>
-            <pattern>%date{ISO8601} - %logger -> %-5level[%thread] %logger{0} - %msg%n</pattern>
+            <pattern>%date{hh:MM:ss.SSS} - %-5level - %logger -> %msg%n</pattern>
         </encoder>
     </appender>
 
-    <!--<logger name="org.github.dnvriend" level="debug"/>-->
-    <logger name="akka.actor" level="debug"/>
+    <logger name="com.github.dnvriend" level="debug"/>
+    <!--<logger name="akka" level="debug"/>-->
 
-    <root level="ERROR">
+    <root level="warn">
         <appender-ref ref="console"/>
     </root>
 
