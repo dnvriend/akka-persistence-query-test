@@ -28,14 +28,8 @@ abstract class CurrentEventsByPersistenceId1Test(config: String) extends TestSpe
     }
 
   it should "find events for actors" in
-    withTestActors() { (actor1, actor2, actor3) =>
-      actor1 ! "a"
-      actor1 ! "a"
-      actor1 ! "a"
-
-      eventually {
-        countJournal shouldBe 3
-      }
+    withTestActors() { (actor1, _, _) =>
+      List.fill(3)(sendMessage("a", actor1)).toTry should be a 'success
 
       withCurrentEventsByPersistenceId()("my-1", 0, 1) { tp =>
         tp.request(Int.MaxValue)

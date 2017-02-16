@@ -19,14 +19,14 @@ package com.github.dnvriend.query
 import akka.persistence.query.{ EventEnvelope, Sequence }
 import com.github.dnvriend.TestSpec
 
-abstract class CurrentEventsByPersistenceIdDeleteEventsTest(config: String) extends TestSpec(config) {
+abstract class CurrentEventsByPersistenceIdMultipleActorsDeleteEventsTest(config: String) extends TestSpec(config) {
 
   it should "not show deleted events in event stream" in {
-    withTestActors() { (actor1, _, _) =>
+    withTestActors() { (actor1, actor2, actor3) =>
       List(
-        sendMessage("a", actor1),
-        sendMessage("b", actor1),
-        sendMessage("c", actor1)
+        sendMessage("a", actor1, actor2, actor3),
+        sendMessage("b", actor1, actor2, actor3),
+        sendMessage("c", actor1, actor2, actor3)
       ).toTry should be a 'success
 
       deleteEvents(actor1, 0).toTry should be a 'success
@@ -66,6 +66,7 @@ abstract class CurrentEventsByPersistenceIdDeleteEventsTest(config: String) exte
   }
 }
 
-class LevelDbCurrentEventsByPersistenceIdDeleteEventsTest extends CurrentEventsByPersistenceIdDeleteEventsTest("application.conf")
+class LevelDbCurrentEventsByPersistenceIdMultipleActorsDeleteEventsTest extends CurrentEventsByPersistenceIdMultipleActorsDeleteEventsTest("application.conf")
 
-class InmemoryCurrentEventsByPersistenceIdDeleteEventsTest extends CurrentEventsByPersistenceIdDeleteEventsTest("inmemory.conf")
+class InMemoryCurrentEventsByPersistenceIdMultipleActorsDeleteEventsTest extends CurrentEventsByPersistenceIdMultipleActorsDeleteEventsTest("inmemory.conf")
+

@@ -19,7 +19,7 @@ package com.github.dnvriend
 import akka.actor.{ ActorLogging, ActorRef }
 import akka.actor.Status.Success
 import akka.event.LoggingReceive
-import akka.persistence.{ DeleteMessagesFailure, DeleteMessagesSuccess, Persistence, PersistentActor }
+import akka.persistence._
 import akka.persistence.journal.Tagged
 
 object TestActor {
@@ -69,6 +69,19 @@ class TestActor(id: Int) extends PersistentActor with ActorLogging {
   def increment(): Unit = state += 1
 
   override def receiveRecover: Receive = LoggingReceive.withLabel(label) {
-    case event: String => increment()
+    case event: String     => increment()
+    case RecoveryCompleted =>
+  }
+
+  override protected def onPersistFailure(cause: Throwable, event: Any, seqNr: Long): Unit = {
+    sender() ! akka.actor.Status.Failure(cause)
+    context.become(receiveCommand)
+    super.onPersistFailure(cause, event, seqNr)
+  }
+
+  override protected def onPersistRejected(cause: Throwable, event: Any, seqNr: Long): Unit = {
+    sender() ! akka.actor.Status.Failure(cause)
+    context.become(receiveCommand)
+    super.onPersistRejected(cause, event, seqNr)
   }
 }

@@ -232,6 +232,11 @@ abstract class TestSpec(config: String = "application.conf") extends FlatSpec wi
     loop(snapshotsDir)
     (journalDir.delete(), snapshotsDir.delete())
   }
+
+  implicit class FutureSequence[A](xs: Seq[Future[A]]) {
+    def sequence(implicit ec: ExecutionContext): Future[Seq[A]] = Future.sequence(xs)
+    def toTry(implicit ec: ExecutionContext): Try[Seq[A]] = Future.sequence(xs).toTry
+  }
 }
 
 //import java.sql.Statement

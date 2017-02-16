@@ -26,7 +26,7 @@ abstract class CurrentEventsByPersistenceId2Test(config: String) extends TestSpe
 
   it should "find events from an offset" in {
     withTestActors() { (actor1, actor2, actor3) =>
-      Future.sequence(Range.inclusive(1, 7).map(_ => actor1 ? "a")).toTry should be a 'success
+      List.fill(7)(sendMessage("a", actor1)).toTry should be a 'success
 
       withCurrentEventsByPersistenceId()("my-1", 0, 0) { tp =>
         tp.request(Int.MaxValue)

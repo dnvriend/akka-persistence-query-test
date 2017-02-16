@@ -25,9 +25,9 @@ abstract class CurrentEventsByTagTest2(config: String) extends TestSpec(config) 
   it should "find all events by tag" in {
     withTestActors() { (actor1, actor2, actor3) =>
       (for {
-        _ <- actor1 ? withTags("a", "number")
-        _ <- actor2 ? withTags("b", "number")
-        _ <- actor3 ? withTags("c", "number")
+        _ <- sendMessage(withTags("a", "number"), actor1)
+        _ <- sendMessage(withTags("b", "number"), actor2)
+        _ <- sendMessage(withTags("c", "number"), actor3)
       } yield ()).toTry should be a 'success
 
       withCurrentEventsByTag()("number", 0) { tp =>
