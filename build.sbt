@@ -8,7 +8,7 @@ scalaVersion := "2.11.8"
 
 resolvers += Resolver.jcenterRepo
 
-val akkaVersion = "2.5-M1"
+val akkaVersion = "2.4.17"
 
 // inmemory
 libraryDependencies += "com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.0.0-M1-SNAPSHOT"
